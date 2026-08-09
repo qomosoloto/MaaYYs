@@ -88,6 +88,74 @@
     ],
     "recognition": "DirectHit"
   },
+  "寮突-单次点击进攻": {
+    "action": "Click",
+    "expected": "进攻",
+    "next": [
+      "寮突25",
+      "寮突-同一目标持续停留",
+      "寮突9",
+      "[JumpBack]寮突8",
+      "[JumpBack]寮突10"
+    ],
+    "post_delay": 500,
+    "pre_delay": 1000,
+    "rate_limit": 2000,
+    "recognition": "OCR",
+    "roi": [
+      375,
+      102,
+      722,
+      617
+    ],
+    "timeout": 2000000
+  },
+  "寮突-同一目标持续停留": {
+    "custom_recognition": "GuildBarrierTargetRecognition",
+    "custom_recognition_param": {
+      "action": "observe",
+      "min_duration_ms": 6000,
+      "min_observations": 3,
+      "observation_timeout_ms": 12000
+    },
+    "next": [
+      "寮突-已攻破-关闭结界突破"
+    ],
+    "rate_limit": 2000,
+    "recognition": "Custom"
+  },
+  "寮突-开始观察当前目标": {
+    "custom_recognition": "GuildBarrierTargetRecognition",
+    "custom_recognition_param": {
+      "action": "reset",
+      "min_duration_ms": 6000,
+      "min_observations": 3,
+      "observation_timeout_ms": 12000
+    },
+    "next": [
+      "寮突-单次点击进攻"
+    ],
+    "recognition": "Custom"
+  },
+  "寮突-识别当前目标玩家名": {
+    "recognition": "OCR",
+    "roi": [
+      500,
+      145,
+      260,
+      70
+    ]
+  },
+  "寮突-识别进攻按钮": {
+    "expected": "进攻",
+    "recognition": "OCR",
+    "roi": [
+      580,
+      335,
+      175,
+      100
+    ]
+  },
   "寮突10": {
     "action": "Click",
     "expected": "点击屏幕继续",
@@ -573,25 +641,17 @@
     ]
   },
   "寮突7": {
-    "action": "Click",
     "expected": "进攻",
     "next": [
-      "寮突25",
-      "寮突9",
-      "[JumpBack]寮突8",
-      "[JumpBack]寮突10"
+      "寮突-开始观察当前目标"
     ],
-    "post_delay": 5000,
-    "pre_delay": 1000,
-    "rate_limit": 2000,
     "recognition": "OCR",
     "roi": [
       375,
       102,
       722,
       617
-    ],
-    "timeout": 2000000
+    ]
   },
   "寮突8": {
     "action": "Click",

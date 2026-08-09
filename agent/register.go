@@ -30,6 +30,7 @@ import (
 	"maa-yys-agent/actions/time_check"
 	"maa-yys-agent/recognition/co_battle_target_recognition"
 	"maa-yys-agent/recognition/config_value_recognition"
+	"maa-yys-agent/recognition/guild_barrier_target_recognition"
 	"maa-yys-agent/recognition/my_recognizer"
 	"maa-yys-agent/recognition/task_counter_recognition"
 
@@ -75,6 +76,7 @@ var customRecognitions = []struct {
 	{"ConfigValueWriteRecognition", &config_value_recognition.ConfigValueWriteRecognition{}},
 	{"ConfigValueCheckRecognition", &config_value_recognition.ConfigValueCheckRecognition{}},
 	{"CoBattleTargetRecognition", &co_battle_target_recognition.CoBattleTargetRecognition{}},
+	{"GuildBarrierTargetRecognition", &guild_barrier_target_recognition.GuildBarrierTargetRecognition{}},
 	{"MyRecognizer", &my_recognizer.MyRecognizer{}},
 	{"TaskCounterRecognition", &task_counter_recognition.TaskCounterRecognition{}},
 }

@@ -11,6 +11,7 @@
         "ConfigValueWriteRecognition",
         "ConfigValueCheckRecognition",
         "CoBattleTargetRecognition",
+        "GuildBarrierTargetRecognition",
         "MyRecognizer",
         "TaskCounterRecognition"
       ]
@@ -22,6 +23,7 @@
       { "$ref": "#/$defs/ConfigValueWriteRecognition" },
       { "$ref": "#/$defs/ConfigValueCheckRecognition" },
       { "$ref": "#/$defs/CoBattleTargetRecognition" },
+      { "$ref": "#/$defs/GuildBarrierTargetRecognition" },
       { "$ref": "#/$defs/MyRecognizer" },
       { "$ref": "#/$defs/TaskCounterRecognition" }
     ]
@@ -112,6 +114,45 @@
               "type": "string",
               "enum": ["add", "check"],
               "description": "add：识别并加入目标；check：识别并检查目标"
+            }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["custom_recognition"]
+    },
+    "GuildBarrierTargetRecognition": {
+      "title": "寮突破目标持续停留识别",
+      "description": "按 Maa TaskID 隔离观察状态；进攻后仅被动截图，当同一玩家和进攻按钮持续存在时返回成功。",
+      "allOf": [{ "$ref": "#/$defs/RequiredParam" }],
+      "properties": {
+        "custom_recognition": { "const": "GuildBarrierTargetRecognition" },
+        "custom_recognition_param": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": ["reset", "observe"],
+              "description": "reset：开始新的观察窗口；observe：被动观察当前目标"
+            },
+            "min_duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 6000,
+              "description": "同一目标至少持续存在的时间"
+            },
+            "min_observations": {
+              "type": "integer",
+              "minimum": 2,
+              "default": 3,
+              "description": "触发恢复前至少命中的连续观察次数"
+            },
+            "observation_timeout_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 12000,
+              "description": "单次进攻后的最大被动观察窗口"
             }
           },
           "required": ["action"],
