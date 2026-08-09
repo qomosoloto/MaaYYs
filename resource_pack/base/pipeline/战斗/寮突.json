@@ -471,9 +471,7 @@
   "寮突25": {
     "expected": "该结界已被攻破",
     "next": [
-      "寮突2_copy1",
-      "[JumpBack]寮突-返回探索界面",
-      "[JumpBack]导航-结界突破"
+      "寮突-已攻破-关闭结界突破"
     ],
     "recognition": "OCR",
     "roi": [
@@ -483,18 +481,55 @@
       128
     ]
   },
-  "寮突2_copy1": {
-    "expected": "结界突破",
+  "寮突-已攻破-关闭结界突破": {
+    "action": "Click",
     "next": [
-      "寮突4_copy1",
-      "[JumpBack]寮突5_copy1"
+      "寮突-已攻破-恢复阴阳寮突破"
+    ],
+    "post_delay": 3000,
+    "recognition": "TemplateMatch",
+    "roi": [
+      813,
+      21,
+      453,
+      264
+    ],
+    "template": [
+      "通用图标/结界突破_关闭.png"
+    ]
+  },
+  "寮突-已攻破-恢复阴阳寮突破": {
+    "next": [
+      "寮突-已攻破-确认阴阳寮突破",
+      "[JumpBack]寮突-已攻破-切换阴阳寮",
+      "[JumpBack]导航-结界突破"
+    ],
+    "recognition": "DirectHit",
+    "timeout": 60000
+  },
+  "寮突-已攻破-切换阴阳寮": {
+    "action": "Click",
+    "expected": "阴|阳寮|阴阳寮",
+    "post_delay": 1000,
+    "recognition": "OCR",
+    "roi": [
+      1176,
+      237,
+      87,
+      304
+    ]
+  },
+  "寮突-已攻破-确认阴阳寮突破": {
+    "expected": "突破进度",
+    "next": [
+      "寮突11"
     ],
     "recognition": "OCR",
     "roi": [
-      510,
-      41,
+      127,
+      293,
       235,
-      84
+      63
     ]
   },
   "寮突4": {
@@ -512,28 +547,7 @@
       63
     ]
   },
-  "寮突4_copy1": {
-    "expected": "突破进度",
-    "recognition": "OCR",
-    "roi": [
-      127,
-      293,
-      235,
-      63
-    ]
-  },
   "寮突5": {
-    "action": "Click",
-    "expected": "阴|阳寮|阴阳寮",
-    "recognition": "OCR",
-    "roi": [
-      1176,
-      237,
-      87,
-      304
-    ]
-  },
-  "寮突5_copy1": {
     "action": "Click",
     "expected": "阴|阳寮|阴阳寮",
     "recognition": "OCR",
