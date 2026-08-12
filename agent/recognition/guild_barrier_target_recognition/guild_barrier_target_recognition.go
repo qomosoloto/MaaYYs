@@ -18,7 +18,7 @@ const (
 	attackButtonRecognitionNode = "寮突-识别进攻按钮"
 	defaultMinDurationMS        = 6000
 	defaultMinObservations      = 3
-	defaultObservationTimeout   = 12000
+	defaultObservationTimeout   = 20000
 	staleStateTTL               = 30 * time.Minute
 )
 

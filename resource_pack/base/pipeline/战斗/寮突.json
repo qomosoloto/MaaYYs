@@ -98,7 +98,7 @@
       "[JumpBack]寮突8",
       "[JumpBack]寮突10"
     ],
-    "post_delay": 500,
+    "post_delay": 5000,
     "pre_delay": 1000,
     "rate_limit": 2000,
     "recognition": "OCR",
@@ -116,7 +116,7 @@
       "action": "observe",
       "min_duration_ms": 6000,
       "min_observations": 3,
-      "observation_timeout_ms": 12000
+      "observation_timeout_ms": 20000
     },
     "next": [
       "寮突-已攻破-关闭结界突破"
@@ -130,10 +130,16 @@
       "action": "reset",
       "min_duration_ms": 6000,
       "min_observations": 3,
-      "observation_timeout_ms": 12000
+      "observation_timeout_ms": 20000
     },
     "next": [
-      "寮突-单次点击进攻"
+      "寮突-单次点击进攻",
+      "[JumpBack]寮突10",
+      "寮突9"
+    ],
+    "on_error": [
+      "寮突10",
+      "寮突9"
     ],
     "recognition": "Custom"
   },

@@ -151,7 +151,7 @@
             "observation_timeout_ms": {
               "type": "integer",
               "minimum": 1,
-              "default": 12000,
+              "default": 20000,
               "description": "单次进攻后的最大被动观察窗口"
             }
           },
