@@ -685,6 +685,7 @@
     ]
   },
   "通用-拒绝下载": {
+    "action": "Click",
     "recognition": "TemplateMatch",
     "roi": [
       307,
