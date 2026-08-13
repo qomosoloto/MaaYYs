@@ -11,6 +11,10 @@ const guildBarrierPipelinePath = "../resource_pack/base/pipeline/战斗/寮突.j
 
 type guildBarrierPipelineNode struct {
 	Action                 string                             `json:"action"`
+	Recognition            string                             `json:"recognition"`
+	CustomRecognition      string                             `json:"custom_recognition"`
+	Expected               string                             `json:"expected"`
+	ROI                    []int                              `json:"roi"`
 	Next                   []string                           `json:"next"`
 	OnError                guildBarrierNodeList               `json:"on_error"`
 	PostDelay              int                                `json:"post_delay"`
@@ -19,8 +23,55 @@ type guildBarrierPipelineNode struct {
 }
 
 type guildBarrierCustomRecognitionParam struct {
-	MinDurationMS        int `json:"min_duration_ms"`
-	ObservationTimeoutMS int `json:"observation_timeout_ms"`
+	MinDurationMS        int    `json:"min_duration_ms"`
+	ObservationTimeoutMS int    `json:"observation_timeout_ms"`
+	Action               string `json:"action"`
+	Outcome              string `json:"outcome"`
+	RecognitionNode      string `json:"recognition_node"`
+}
+
+func TestGuildBarrierTargetLayoutsUsePairedRecognitionAreas(t *testing.T) {
+	pipeline := loadGuildBarrierPipeline(t)
+	wantROIs := map[string][]int{
+		"寮突-识别当前目标玩家名-左": {500, 145, 260, 70},
+		"寮突-识别进攻按钮-左":    {580, 335, 175, 100},
+		"寮突-识别当前目标玩家名-右": {820, 145, 260, 70},
+		"寮突-识别进攻按钮-右":    {900, 335, 180, 100},
+	}
+
+	for nodeName, want := range wantROIs {
+		if got := pipeline[nodeName].ROI; !reflect.DeepEqual(got, want) {
+			t.Errorf("%s roi = %v, want %v", nodeName, got, want)
+		}
+	}
+}
+
+func TestGuildBarrierResultNodesDelegateRecognitionAndKeepClick(t *testing.T) {
+	pipeline := loadGuildBarrierPipeline(t)
+	tests := []struct {
+		node      string
+		outcome   string
+		delegated string
+		expected  string
+	}{
+		{node: "寮突10", outcome: "success", delegated: "寮突-识别攻击成功", expected: "点击屏幕继续"},
+		{node: "寮突8", outcome: "failure", delegated: "寮突-识别攻击失败", expected: "失败"},
+	}
+
+	for _, test := range tests {
+		node := pipeline[test.node]
+		if node.Action != "Click" || node.Recognition != "Custom" || node.CustomRecognition != "GuildBarrierTargetRecognition" {
+			t.Errorf("%s must keep Click and use GuildBarrierTargetRecognition: %+v", test.node, node)
+		}
+		if node.CustomRecognitionParam.Action != "result" ||
+			node.CustomRecognitionParam.Outcome != test.outcome ||
+			node.CustomRecognitionParam.RecognitionNode != test.delegated {
+			t.Errorf("%s result params = %+v", test.node, node.CustomRecognitionParam)
+		}
+		if got := pipeline[test.delegated].Expected; got != test.expected {
+			t.Errorf("%s expected = %q, want %q", test.delegated, got, test.expected)
+		}
+	}
 }
 
 type guildBarrierNodeList []string

@@ -143,7 +143,7 @@
     ],
     "recognition": "Custom"
   },
-  "寮突-识别当前目标玩家名": {
+  "寮突-识别当前目标玩家名-左": {
     "recognition": "OCR",
     "roi": [
       500,
@@ -152,7 +152,7 @@
       70
     ]
   },
-  "寮突-识别进攻按钮": {
+  "寮突-识别进攻按钮-左": {
     "expected": "进攻",
     "recognition": "OCR",
     "roi": [
@@ -162,11 +162,8 @@
       100
     ]
   },
-  "寮突10": {
-    "action": "Click",
+  "寮突-识别攻击成功": {
     "expected": "点击屏幕继续",
-    "post_delay": 1000,
-    "pre_delay": 1000,
     "recognition": "OCR",
     "roi": [
       314,
@@ -174,6 +171,37 @@
       603,
       98
     ]
+  },
+  "寮突-识别当前目标玩家名-右": {
+    "recognition": "OCR",
+    "roi": [
+      820,
+      145,
+      260,
+      70
+    ]
+  },
+  "寮突-识别进攻按钮-右": {
+    "expected": "进攻",
+    "recognition": "OCR",
+    "roi": [
+      900,
+      335,
+      180,
+      100
+    ]
+  },
+  "寮突10": {
+    "action": "Click",
+    "custom_recognition": "GuildBarrierTargetRecognition",
+    "custom_recognition_param": {
+      "action": "result",
+      "outcome": "success",
+      "recognition_node": "寮突-识别攻击成功"
+    },
+    "post_delay": 1000,
+    "pre_delay": 1000,
+    "recognition": "Custom"
   },
   "寮突11": {
     "expected": "1/6|2/6|3/6|4/6|5/6|6/6",
@@ -659,11 +687,8 @@
       617
     ]
   },
-  "寮突8": {
-    "action": "Click",
+  "寮突-识别攻击失败": {
     "expected": "失败",
-    "post_delay": 1000,
-    "pre_delay": 1000,
     "recognition": "OCR",
     "roi": [
       300,
@@ -671,6 +696,18 @@
       732,
       300
     ]
+  },
+  "寮突8": {
+    "action": "Click",
+    "custom_recognition": "GuildBarrierTargetRecognition",
+    "custom_recognition_param": {
+      "action": "result",
+      "outcome": "failure",
+      "recognition_node": "寮突-识别攻击失败"
+    },
+    "post_delay": 1000,
+    "pre_delay": 1000,
+    "recognition": "Custom"
   },
   "寮突9": {
     "expected": "击败次数",
