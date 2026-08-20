@@ -103,6 +103,22 @@ func TestGuildBarrierAttackWaitsForBattleTransition(t *testing.T) {
 	}
 }
 
+func TestGuildBarrierRetainsUpstreamCounterFallback(t *testing.T) {
+	pipeline := loadGuildBarrierPipeline(t)
+	attack := pipeline["寮突-单次点击进攻"]
+	fallback := pipeline["寮突-当前结界已被攻破"]
+
+	if !containsGuildBarrierNode(attack.Next, "[JumpBack]寮突-当前结界已被攻破") {
+		t.Fatalf("attack next = %v, want upstream counter fallback", attack.Next)
+	}
+	if fallback.CustomRecognition != "OCRResultCounterRecognition" {
+		t.Fatalf("fallback recognition = %q, want OCRResultCounterRecognition", fallback.CustomRecognition)
+	}
+	if !containsGuildBarrierNode(fallback.Next, "寮突-已攻破-关闭结界突破") {
+		t.Fatalf("fallback next = %v, want fork recovery flow", fallback.Next)
+	}
+}
+
 func TestGuildBarrierObservationWindowCoversTransitionAndDetection(t *testing.T) {
 	pipeline := loadGuildBarrierPipeline(t)
 	attack := pipeline["寮突-单次点击进攻"]
@@ -162,4 +178,13 @@ func loadGuildBarrierPipeline(t *testing.T) map[string]guildBarrierPipelineNode 
 		t.Fatalf("parse %s: %v", guildBarrierPipelinePath, err)
 	}
 	return pipeline
+}
+
+func containsGuildBarrierNode(nodes []string, expected string) bool {
+	for _, node := range nodes {
+		if node == expected {
+			return true
+		}
+	}
+	return false
 }

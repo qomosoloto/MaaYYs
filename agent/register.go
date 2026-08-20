@@ -32,6 +32,7 @@ import (
 	"maa-yys-agent/recognition/config_value_recognition"
 	"maa-yys-agent/recognition/guild_barrier_target_recognition"
 	"maa-yys-agent/recognition/my_recognizer"
+	"maa-yys-agent/recognition/ocr_result_counter_recognition"
 	"maa-yys-agent/recognition/task_counter_recognition"
 
 	maa "github.com/MaaXYZ/maa-framework-go/v4"
@@ -78,6 +79,7 @@ var customRecognitions = []struct {
 	{"CoBattleTargetRecognition", &co_battle_target_recognition.CoBattleTargetRecognition{}},
 	{"GuildBarrierTargetRecognition", &guild_barrier_target_recognition.GuildBarrierTargetRecognition{}},
 	{"MyRecognizer", &my_recognizer.MyRecognizer{}},
+	{"OCRResultCounterRecognition", &ocr_result_counter_recognition.OCRResultCounterRecognition{}},
 	{"TaskCounterRecognition", &task_counter_recognition.TaskCounterRecognition{}},
 }
 
