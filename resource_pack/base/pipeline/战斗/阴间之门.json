@@ -1,4 +1,22 @@
 {
+  "阴界之门-开始装备御魂": {
+    "expected": "阴界之门",
+    "max_hit": 1,
+    "next": [
+      "阴间之门11",
+      "[JumpBack]阴间之门12",
+      "[JumpBack]阴间之门13"
+    ],
+    "post_delay": 2000,
+    "pre_delay": 1000,
+    "recognition": "OCR",
+    "roi": [
+      543,
+      36,
+      172,
+      60
+    ]
+  },
   "阴界之门-时间检查": {
     "action": "Custom",
     "custom_action": "TimeCheck",
@@ -20,7 +38,8 @@
       "Node.Action.Starting": "阴界之门-开始检查时间"
     },
     "next": [
-      "阴间之门"
+      "阴间之门5",
+      "[JumpBack]导航-阴阳寮神社"
     ],
     "on_error": [
       "导航-庭院"
@@ -53,13 +72,15 @@
       "阴间之门/N-1772895473660_1.png"
     ]
   },
-  "阴间之门": {
-    "next": [
-      "阴间之门2",
-      "[JumpBack]导航-阴阳寮"
-    ],
-    "rate_limit": 4000,
-    "recognition": "DirectHit"
+  "阴间之门-确定返回阴界之门界面": {
+    "expected": "阴界之门",
+    "recognition": "OCR",
+    "roi": [
+      499,
+      22,
+      234,
+      92
+    ]
   },
   "阴间之门10": {
     "action": "Click",
@@ -81,7 +102,7 @@
     },
     "expected": "式神录",
     "next": [
-      "阴间之门15",
+      "阴间之门-确定返回阴界之门界面",
       "阴间之门16",
       "[JumpBack]阴间之门14"
     ],
@@ -154,7 +175,7 @@
     "action": "Click",
     "expected": "阴界之门|攻打中",
     "next": [
-      "阴间之门15"
+      "阴间之门-确定返回阴界之门界面"
     ],
     "recognition": "OCR",
     "roi": [
@@ -202,20 +223,6 @@
       369,
       439,
       104
-    ]
-  },
-  "阴间之门2": {
-    "expected": "寮信息",
-    "next": [
-      "阴间之门3",
-      "[JumpBack]阴间之门4"
-    ],
-    "recognition": "OCR",
-    "roi": [
-      1141,
-      649,
-      116,
-      70
     ]
   },
   "阴间之门20": {
@@ -332,36 +339,6 @@
     ],
     "timeout": 600000
   },
-  "阴间之门3": {
-    "expected": "信息|祈愿|神社|顺位",
-    "next": [
-      "阴间之门5",
-      "[JumpBack]阴间之门6"
-    ],
-    "on_error": [
-      "导航-庭院"
-    ],
-    "recognition": "OCR",
-    "roi": [
-      1175,
-      130,
-      54,
-      447
-    ],
-    "timeout": 5000
-  },
-  "阴间之门4": {
-    "action": "Click",
-    "expected": "寮信息",
-    "post_delay": 2000,
-    "recognition": "OCR",
-    "roi": [
-      1141,
-      641,
-      139,
-      79
-    ]
-  },
   "阴间之门5": {
     "expected": "阴界之门|集体任务",
     "next": [
@@ -382,17 +359,6 @@
     ],
     "timeout": 5000
   },
-  "阴间之门6": {
-    "action": "Click",
-    "expected": "神社",
-    "recognition": "OCR",
-    "roi": [
-      1137,
-      99,
-      121,
-      511
-    ]
-  },
   "阴间之门7": {
     "action": "Click",
     "expected": "阴界之门",
@@ -407,7 +373,8 @@
   "阴间之门8": {
     "expected": "攻打中",
     "next": [
-      "阴间之门9",
+      "[JumpBack]阴界之门-开始装备御魂",
+      "阴间之门15",
       "[JumpBack]阴间之门10"
     ],
     "recognition": "OCR",
@@ -416,23 +383,6 @@
       589,
       217,
       116
-    ]
-  },
-  "阴间之门9": {
-    "expected": "阴界之门",
-    "next": [
-      "阴间之门11",
-      "[JumpBack]阴间之门12",
-      "[JumpBack]阴间之门13"
-    ],
-    "post_delay": 2000,
-    "pre_delay": 1000,
-    "recognition": "OCR",
-    "roi": [
-      543,
-      36,
-      172,
-      60
     ]
   }
 }
