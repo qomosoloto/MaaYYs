@@ -25,6 +25,7 @@ type guildBarrierPipelineNode struct {
 type guildBarrierCustomRecognitionParam struct {
 	MinDurationMS        int    `json:"min_duration_ms"`
 	ObservationTimeoutMS int    `json:"observation_timeout_ms"`
+	TargetCount          int    `json:"target_count"`
 	Action               string `json:"action"`
 	Outcome              string `json:"outcome"`
 	RecognitionNode      string `json:"recognition_node"`
@@ -116,6 +117,39 @@ func TestGuildBarrierRetainsUpstreamCounterFallback(t *testing.T) {
 	}
 	if !containsGuildBarrierNode(fallback.Next, "寮突-已攻破-关闭结界突破") {
 		t.Fatalf("fallback next = %v, want fork recovery flow", fallback.Next)
+	}
+}
+
+func TestGuildBarrierCombinesRepeatGuardWithTargetObservation(t *testing.T) {
+	pipeline := loadGuildBarrierPipeline(t)
+	record := pipeline["寮突-记录最后一个名字并进攻"]
+	want := []string{"寮突-当前结界已被攻破", "寮突-开始观察当前目标"}
+
+	if !reflect.DeepEqual(record.Next, want) {
+		t.Fatalf("record next = %v, want repeat guard followed by target observation %v", record.Next, want)
+	}
+	if got := pipeline["寮突-当前结界已被攻破"].CustomRecognitionParam.TargetCount; got != 3 {
+		t.Fatalf("repeat guard target_count = %d, want upstream value 3", got)
+	}
+	if !containsGuildBarrierNode(pipeline["寮突-识别进攻按钮"].Next, "[JumpBack]寮突-记录最后一个名字并进攻") {
+		t.Fatalf("attack recognition must enter the upstream repeat guard")
+	}
+}
+
+func TestGuildBarrierRecoveryPrefersTrackedSelectionWithUpstreamFallbacks(t *testing.T) {
+	pipeline := loadGuildBarrierPipeline(t)
+	recovery := pipeline["寮突-已攻破-确认阴阳寮突破"]
+	want := []string{
+		"寮突11",
+		"寮突12",
+		"寮突20",
+		"寮突6",
+		"寮突-识别是否已经攻破",
+		"[JumpBack]寮突10",
+	}
+
+	if !reflect.DeepEqual(recovery.Next, want) {
+		t.Fatalf("recovery next = %v, want %v", recovery.Next, want)
 	}
 }
 
