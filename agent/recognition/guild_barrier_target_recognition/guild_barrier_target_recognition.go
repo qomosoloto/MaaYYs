@@ -21,12 +21,13 @@ const (
 	defaultMinDurationMS             = 6000
 	defaultMinObservations           = 3
 	defaultObservationTimeout        = 20000
+	defaultLogPrefix                 = "寮突破"
 	staleStateTTL                    = 30 * time.Minute
 )
 
-var targetLayouts = []targetLayout{
-	{nameNode: leftTargetNameRecognitionNode, attackNode: leftAttackButtonRecognitionNode},
-	{nameNode: rightTargetNameRecognitionNode, attackNode: rightAttackButtonRecognitionNode},
+var defaultTargetLayouts = []targetLayout{
+	{NameNode: leftTargetNameRecognitionNode, AttackNode: leftAttackButtonRecognitionNode},
+	{NameNode: rightTargetNameRecognitionNode, AttackNode: rightAttackButtonRecognitionNode},
 }
 
 // GuildBarrierTargetRecognition 按 Maa 任务隔离每次进攻后的观察状态。
@@ -38,12 +39,15 @@ type GuildBarrierTargetRecognition struct {
 }
 
 type recognitionParams struct {
-	Action               string `json:"action"`
-	MinDurationMS        int    `json:"min_duration_ms"`
-	MinObservations      int    `json:"min_observations"`
-	ObservationTimeoutMS int    `json:"observation_timeout_ms"`
-	RecognitionNode      string `json:"recognition_node"`
-	Outcome              string `json:"outcome"`
+	Action               string         `json:"action"`
+	MinDurationMS        int            `json:"min_duration_ms"`
+	MinObservations      int            `json:"min_observations"`
+	ObservationTimeoutMS int            `json:"observation_timeout_ms"`
+	RecognitionNode      string         `json:"recognition_node"`
+	Outcome              string         `json:"outcome"`
+	LogPrefix            string         `json:"log_prefix"`
+	TargetLayouts        []targetLayout `json:"target_layouts"`
+	RequireTarget        bool           `json:"require_target"`
 }
 
 type recognitionDetail struct {
@@ -62,8 +66,10 @@ type taskObservation struct {
 }
 
 type targetLayout struct {
-	nameNode   string
-	attackNode string
+	NameNode         string `json:"name_node"`
+	AttackNode       string `json:"attack_node"`
+	AttackCenterXMin *int   `json:"attack_center_x_min,omitempty"`
+	AttackCenterXMax *int   `json:"attack_center_x_max,omitempty"`
 }
 
 type recognitionLookup func(node string) (*maa.RecognitionDetail, error)
@@ -84,7 +90,10 @@ func (r *GuildBarrierTargetRecognition) Run(
 	now := r.currentTime()
 	switch params.Action {
 	case "reset":
-		targetName, _, _ := recognizeCurrentTarget(ctx, arg)
+		targetName, attackBox, ok := recognizeCurrentTarget(ctx, arg, params.TargetLayouts)
+		if params.RequireTarget && !ok {
+			return nil, false
+		}
 		r.resetObservation(
 			arg.TaskID,
 			now,
@@ -92,7 +101,10 @@ func (r *GuildBarrierTargetRecognition) Run(
 			targetName,
 		)
 		if targetName != "" {
-			r.printf("寮突破：开始攻击「%s」结界\n", targetName)
+			r.printf("%s：开始攻击「%s」结界\n", params.LogPrefix, targetName)
+		}
+		if ok {
+			return &maa.CustomRecognitionResult{Box: attackBox}, true
 		}
 		return emptyResult(), true
 	case "observe":
@@ -100,7 +112,7 @@ func (r *GuildBarrierTargetRecognition) Run(
 			return nil, false
 		}
 
-		targetName, targetBox, ok := recognizeCurrentTarget(ctx, arg)
+		targetName, targetBox, ok := recognizeCurrentTarget(ctx, arg, params.TargetLayouts)
 		if !ok {
 			r.resetContinuity(arg.TaskID, now)
 			return nil, false
@@ -117,7 +129,7 @@ func (r *GuildBarrierTargetRecognition) Run(
 			return nil, false
 		}
 
-		r.printf("寮突破：攻击「%s」结界失败：同一目标持续停留，可能已被攻破，正在恢复\n", targetName)
+		r.printf("%s：攻击「%s」结界失败：同一目标持续停留，可能已被攻破，正在恢复\n", params.LogPrefix, targetName)
 		return &maa.CustomRecognitionResult{Box: targetBox}, true
 	case "result":
 		detail, err := ctx.RunRecognition(params.RecognitionNode, arg.Img, nil)
@@ -127,7 +139,7 @@ func (r *GuildBarrierTargetRecognition) Run(
 
 		targetName := r.consumeAttack(arg.TaskID, now)
 		if targetName != "" {
-			r.logOutcome(targetName, params.Outcome)
+			r.logOutcomeWithPrefix(params.LogPrefix, targetName, params.Outcome)
 		}
 		return &maa.CustomRecognitionResult{Box: detail.Box}, true
 	default:
@@ -144,11 +156,15 @@ func parseParams(arg *maa.CustomRecognitionArg) (*recognitionParams, error) {
 		MinDurationMS:        defaultMinDurationMS,
 		MinObservations:      defaultMinObservations,
 		ObservationTimeoutMS: defaultObservationTimeout,
+		LogPrefix:            defaultLogPrefix,
 	}
 	if arg.CustomRecognitionParam != "" {
 		if err := json.Unmarshal([]byte(arg.CustomRecognitionParam), &params); err != nil {
 			return nil, err
 		}
+	}
+	if params.TargetLayouts == nil {
+		params.TargetLayouts = cloneTargetLayouts(defaultTargetLayouts)
 	}
 
 	if params.Action != "reset" && params.Action != "observe" && params.Action != "result" {
@@ -171,6 +187,28 @@ func parseParams(arg *maa.CustomRecognitionArg) (*recognitionParams, error) {
 	if params.ObservationTimeoutMS < params.MinDurationMS {
 		return nil, fmt.Errorf("observation_timeout_ms 不能小于 min_duration_ms")
 	}
+	params.LogPrefix = strings.TrimSpace(params.LogPrefix)
+	if params.LogPrefix == "" {
+		return nil, fmt.Errorf("log_prefix 不能为空")
+	}
+	if len(params.TargetLayouts) == 0 {
+		return nil, fmt.Errorf("target_layouts 不能为空")
+	}
+	for index, layout := range params.TargetLayouts {
+		if strings.TrimSpace(layout.NameNode) == "" || strings.TrimSpace(layout.AttackNode) == "" {
+			return nil, fmt.Errorf("target_layouts[%d] 必须同时提供 name_node 和 attack_node", index)
+		}
+		if layout.AttackCenterXMin != nil && *layout.AttackCenterXMin < 0 {
+			return nil, fmt.Errorf("target_layouts[%d].attack_center_x_min 不能小于 0", index)
+		}
+		if layout.AttackCenterXMax != nil && *layout.AttackCenterXMax < 1 {
+			return nil, fmt.Errorf("target_layouts[%d].attack_center_x_max 必须大于 0", index)
+		}
+		if layout.AttackCenterXMin != nil && layout.AttackCenterXMax != nil &&
+			*layout.AttackCenterXMin >= *layout.AttackCenterXMax {
+			return nil, fmt.Errorf("target_layouts[%d] 的进攻按钮横向范围无效", index)
+		}
+	}
 
 	return &params, nil
 }
@@ -178,6 +216,7 @@ func parseParams(arg *maa.CustomRecognitionArg) (*recognitionParams, error) {
 func recognizeCurrentTarget(
 	ctx *maa.Context,
 	arg *maa.CustomRecognitionArg,
+	layouts []targetLayout,
 ) (string, maa.Rect, bool) {
 	if ctx == nil || arg == nil || arg.Img == nil {
 		return "", maa.Rect{}, false
@@ -185,18 +224,28 @@ func recognizeCurrentTarget(
 
 	return recognizeCurrentTargetWith(func(node string) (*maa.RecognitionDetail, error) {
 		return ctx.RunRecognition(node, arg.Img, nil)
-	})
+	}, layouts...)
 }
 
-func recognizeCurrentTargetWith(lookup recognitionLookup) (string, maa.Rect, bool) {
-	for _, layout := range targetLayouts {
-		nameDetail, err := lookup(layout.nameNode)
+func recognizeCurrentTargetWith(lookup recognitionLookup, layouts ...targetLayout) (string, maa.Rect, bool) {
+	if len(layouts) == 0 {
+		layouts = defaultTargetLayouts
+	}
+	for _, layout := range layouts {
+		nameDetail, err := lookup(layout.NameNode)
 		if err != nil || nameDetail == nil || !nameDetail.Hit {
 			continue
 		}
 
-		attackDetail, err := lookup(layout.attackNode)
+		attackDetail, err := lookup(layout.AttackNode)
 		if err != nil || attackDetail == nil || !attackDetail.Hit {
+			continue
+		}
+		attackCenterX := attackDetail.Box.X() + attackDetail.Box.Width()/2
+		if layout.AttackCenterXMin != nil && attackCenterX < *layout.AttackCenterXMin {
+			continue
+		}
+		if layout.AttackCenterXMax != nil && attackCenterX >= *layout.AttackCenterXMax {
 			continue
 		}
 
@@ -207,11 +256,15 @@ func recognizeCurrentTargetWith(lookup recognitionLookup) (string, maa.Rect, boo
 
 		targetName := sanitizeTargetName(detail.Best.Text)
 		if targetName != "" {
-			return targetName, nameDetail.Box, true
+			return targetName, attackDetail.Box, true
 		}
 	}
 
 	return "", maa.Rect{}, false
+}
+
+func cloneTargetLayouts(layouts []targetLayout) []targetLayout {
+	return append([]targetLayout(nil), layouts...)
 }
 
 func sanitizeTargetName(value string) string {
@@ -356,9 +409,13 @@ func (r *GuildBarrierTargetRecognition) printf(format string, args ...any) {
 }
 
 func (r *GuildBarrierTargetRecognition) logOutcome(targetName string, outcome string) {
+	r.logOutcomeWithPrefix(defaultLogPrefix, targetName, outcome)
+}
+
+func (r *GuildBarrierTargetRecognition) logOutcomeWithPrefix(logPrefix string, targetName string, outcome string) {
 	if outcome == "success" {
-		r.printf("寮突破：攻击「%s」结界成功\n", targetName)
+		r.printf("%s：攻击「%s」结界成功\n", logPrefix, targetName)
 		return
 	}
-	r.printf("寮突破：攻击「%s」结界失败\n", targetName)
+	r.printf("%s：攻击「%s」结界失败\n", logPrefix, targetName)
 }

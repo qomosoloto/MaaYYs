@@ -135,7 +135,7 @@ func TestRecognizeCurrentTargetUsesMatchingRightLayout(t *testing.T) {
 			Box:        maa.Rect{820, 145, 260, 70},
 			DetailJson: `{"best":{"text":"玖 黎"}}`,
 		},
-		rightAttackButtonRecognitionNode: {Hit: true},
+		rightAttackButtonRecognitionNode: {Hit: true, Box: maa.Rect{900, 335, 180, 100}},
 	}
 
 	target, box, ok := recognizeCurrentTargetWith(func(node string) (*maa.RecognitionDetail, error) {
@@ -147,8 +147,8 @@ func TestRecognizeCurrentTargetUsesMatchingRightLayout(t *testing.T) {
 	if target != "玖黎" {
 		t.Fatalf("target = %q, want 玖黎", target)
 	}
-	if box != (maa.Rect{820, 145, 260, 70}) {
-		t.Fatalf("box = %v, want right target box", box)
+	if box != (maa.Rect{900, 335, 180, 100}) {
+		t.Fatalf("box = %v, want right attack button box", box)
 	}
 }
 
@@ -167,6 +167,67 @@ func TestRecognizeCurrentTargetRejectsCrossLayoutMatch(t *testing.T) {
 		return details[node], nil
 	}); ok {
 		t.Fatalf("cross-layout name and button must not match, got %q", target)
+	}
+}
+
+func TestRecognizeCurrentTargetSupportsCustomLayouts(t *testing.T) {
+	const (
+		nameNode   = "寮突V2-识别当前目标玩家名"
+		attackNode = "寮突V2-识别进攻按钮"
+	)
+	details := map[string]*maa.RecognitionDetail{
+		nameNode: {
+			Hit:        true,
+			Box:        maa.Rect{500, 145, 260, 70},
+			DetailJson: `{"best":{"text":"实验 玩家"}}`,
+		},
+		attackNode: {Hit: true, Box: maa.Rect{580, 335, 175, 100}},
+	}
+
+	target, box, ok := recognizeCurrentTargetWith(
+		func(node string) (*maa.RecognitionDetail, error) {
+			return details[node], nil
+		},
+		targetLayout{NameNode: nameNode, AttackNode: attackNode},
+	)
+	if !ok || target != "实验玩家" {
+		t.Fatalf("custom layout target = %q, ok = %v", target, ok)
+	}
+	if box != (maa.Rect{580, 335, 175, 100}) {
+		t.Fatalf("custom layout box = %v, want attack button box", box)
+	}
+}
+
+func TestRecognizeCurrentTargetMatchesSharedAttackByHorizontalBounds(t *testing.T) {
+	const sharedAttackNode = "寮突V2-识别进攻按钮"
+	boundary := 640
+	details := map[string]*maa.RecognitionDetail{
+		"左侧玩家": {
+			Hit:        true,
+			DetailJson: `{"best":{"text":"背景玩家"}}`,
+		},
+		"右侧玩家": {
+			Hit:        true,
+			DetailJson: `{"best":{"text":"实际目标"}}`,
+		},
+		sharedAttackNode: {
+			Hit: true,
+			Box: maa.Rect{900, 335, 180, 100},
+		},
+	}
+
+	target, box, ok := recognizeCurrentTargetWith(
+		func(node string) (*maa.RecognitionDetail, error) {
+			return details[node], nil
+		},
+		targetLayout{NameNode: "左侧玩家", AttackNode: sharedAttackNode, AttackCenterXMax: &boundary},
+		targetLayout{NameNode: "右侧玩家", AttackNode: sharedAttackNode, AttackCenterXMin: &boundary},
+	)
+	if !ok || target != "实际目标" {
+		t.Fatalf("bounded shared attack target = %q, ok = %v", target, ok)
+	}
+	if box != (maa.Rect{900, 335, 180, 100}) {
+		t.Fatalf("bounded shared attack box = %v", box)
 	}
 }
 
@@ -194,6 +255,12 @@ func TestOutcomeLogsUseTargetNameAndAreConsumedOnce(t *testing.T) {
 	if got, want := logs.String(), "寮突破：攻击「玩家甲」结界失败\n"; got != want {
 		t.Fatalf("failure log = %q, want %q", got, want)
 	}
+
+	logs.Reset()
+	recognizer.logOutcomeWithPrefix("寮突破 V2", "玩家乙", "success")
+	if got, want := logs.String(), "寮突破 V2：攻击「玩家乙」结界成功\n"; got != want {
+		t.Fatalf("custom prefix log = %q, want %q", got, want)
+	}
 }
 
 func TestParseParamsAppliesDefaultsAndValidatesThresholds(t *testing.T) {
@@ -211,6 +278,9 @@ func TestParseParamsAppliesDefaultsAndValidatesThresholds(t *testing.T) {
 		parsed.ObservationTimeoutMS != defaultObservationTimeout {
 		t.Fatalf("unexpected defaults: %+v", parsed)
 	}
+	if parsed.LogPrefix != defaultLogPrefix || len(parsed.TargetLayouts) != len(defaultTargetLayouts) {
+		t.Fatalf("unexpected layout or log defaults: %+v", parsed)
+	}
 
 	invalid, err := json.Marshal(map[string]any{
 		"action":                 "observe",
@@ -222,6 +292,68 @@ func TestParseParamsAppliesDefaultsAndValidatesThresholds(t *testing.T) {
 	}
 	if _, err := parseParams(&maa.CustomRecognitionArg{CustomRecognitionParam: string(invalid)}); err == nil {
 		t.Fatal("a timeout shorter than the required duration must be rejected")
+	}
+}
+
+func TestParseParamsAcceptsCustomLayoutsAndLogPrefix(t *testing.T) {
+	encoded, err := json.Marshal(map[string]any{
+		"action":         "reset",
+		"log_prefix":     "寮突破 V2",
+		"require_target": true,
+		"target_layouts": []map[string]any{
+			{
+				"name_node":           "寮突V2-玩家名",
+				"attack_node":         "寮突V2-进攻按钮",
+				"attack_center_x_min": 640,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal custom params: %v", err)
+	}
+
+	parsed, err := parseParams(&maa.CustomRecognitionArg{CustomRecognitionParam: string(encoded)})
+	if err != nil {
+		t.Fatalf("parse custom params: %v", err)
+	}
+	if parsed.LogPrefix != "寮突破 V2" ||
+		!parsed.RequireTarget ||
+		len(parsed.TargetLayouts) != 1 ||
+		parsed.TargetLayouts[0].NameNode != "寮突V2-玩家名" ||
+		parsed.TargetLayouts[0].AttackNode != "寮突V2-进攻按钮" ||
+		parsed.TargetLayouts[0].AttackCenterXMin == nil ||
+		*parsed.TargetLayouts[0].AttackCenterXMin != 640 {
+		t.Fatalf("unexpected custom params: %+v", parsed)
+	}
+
+	for _, invalid := range []map[string]any{
+		{"action": "reset", "log_prefix": ""},
+		{"action": "observe", "target_layouts": []any{}},
+		{
+			"action": "reset",
+			"target_layouts": []map[string]string{
+				{"name_node": "寮突V2-玩家名"},
+			},
+		},
+		{
+			"action": "reset",
+			"target_layouts": []map[string]any{
+				{
+					"name_node":           "寮突V2-玩家名",
+					"attack_node":         "寮突V2-进攻按钮",
+					"attack_center_x_min": 640,
+					"attack_center_x_max": 640,
+				},
+			},
+		},
+	} {
+		data, marshalErr := json.Marshal(invalid)
+		if marshalErr != nil {
+			t.Fatalf("marshal invalid params: %v", marshalErr)
+		}
+		if _, parseErr := parseParams(&maa.CustomRecognitionArg{CustomRecognitionParam: string(data)}); parseErr == nil {
+			t.Fatalf("invalid custom params must be rejected: %v", invalid)
+		}
 	}
 }
 
