@@ -28,7 +28,7 @@ type guildBarrierPipelineNode struct {
 	Next                   []string                           `json:"next"`
 	OnError                guildBarrierNodeList               `json:"on_error"`
 	Target                 []int                              `json:"target"`
-	MaxHit                 int                                `json:"max_hit"`
+	MaxHit                 *int                               `json:"max_hit"`
 	OnlyRec                bool                               `json:"only_rec"`
 	PostDelay              int                                `json:"post_delay"`
 	PreDelay               int                                `json:"pre_delay"`
@@ -263,7 +263,7 @@ func TestGuildBarrierV2SettlementUsesStateDrivenTransition(t *testing.T) {
 	pipeline := loadGuildBarrierPipelineAt(t, guildBarrierV2PipelinePath)
 	readyNodeName := "寮突V2-结算后列表就绪"
 	retryNodeName := "寮突V2-继续点击战斗结算"
-	safeSettlementTarget := []int{242, 542, 893, 178}
+	safeSettlementTarget := []int{600, 684, 80, 20}
 
 	for _, resultNodeName := range []string{"寮突V210", "寮突V28"} {
 		resultNode := pipeline[resultNodeName]
@@ -280,10 +280,10 @@ func TestGuildBarrierV2SettlementUsesStateDrivenTransition(t *testing.T) {
 	}
 
 	retry := pipeline[retryNodeName]
-	if retry.Action != "Shell" || retry.Recognition != "OCR" || retry.Expected != "点击屏幕|屏幕继续" || !retry.OnlyRec || retry.MaxHit != 3 {
+	if retry.Action != "Shell" || retry.Recognition != "OCR" || retry.Expected != "点击屏幕|屏幕继续" || !retry.OnlyRec || retry.MaxHit != nil {
 		t.Fatalf("settlement retry node has unexpected recognition or action parameters: %+v", retry)
 	}
-	for _, fragment := range []string{"dumpsys activity activities", "com\\.netease\\.onmyoji", "input -d", "dumpsys input"} {
+	for _, fragment := range []string{"dumpsys activity activities", "com\\.netease\\.onmyoji", "input -d", "dumpsys input", "height * 19 / 20", "guild_barrier_v2_settlement", "display_id=", "viewport=", "tap="} {
 		if !strings.Contains(retry.Cmd, fragment) {
 			t.Errorf("settlement retry command %q must contain %q", retry.Cmd, fragment)
 		}
@@ -300,7 +300,7 @@ func TestGuildBarrierV2SettlementUsesStateDrivenTransition(t *testing.T) {
 	if !reflect.DeepEqual(ready.Next, wantNext) {
 		t.Fatalf("settlement state routing = %v, want %v", ready.Next, wantNext)
 	}
-	wantClearedNodes := []string{"寮突V2-记录最后一个名字并进攻", retryNodeName}
+	wantClearedNodes := []string{"寮突V2-记录最后一个名字并进攻"}
 	if !reflect.DeepEqual(ready.CustomActionParam.NodeNames, wantClearedNodes) {
 		t.Fatalf("settlement ready clears = %v, want %v", ready.CustomActionParam.NodeNames, wantClearedNodes)
 	}

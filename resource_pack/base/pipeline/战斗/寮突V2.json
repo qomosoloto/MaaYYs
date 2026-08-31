@@ -296,10 +296,10 @@
     "pre_delay": 200,
     "recognition": "Custom",
     "target": [
-      242,
-      542,
-      893,
-      178
+      600,
+      684,
+      80,
+      20
     ],
     "next": [
       "寮突V2-结算后列表就绪",
@@ -834,10 +834,10 @@
     "pre_delay": 200,
     "recognition": "Custom",
     "target": [
-      242,
-      542,
-      893,
-      178
+      600,
+      684,
+      80,
+      20
     ],
     "next": [
       "寮突V2-结算后列表就绪",
@@ -847,9 +847,8 @@
   },
   "寮突V2-继续点击战斗结算": {
     "action": "Shell",
-    "cmd": "display_id=$(dumpsys activity activities | sed -n '/^[[:space:]]*Display #[0-9]/{s/^[[:space:]]*Display #\\([0-9][0-9]*\\).*/\\1/;h};/topResumedActivity=.*com\\.netease\\.onmyoji/{g;p}'); if [ -z \"$display_id\" ]; then display_id=0; fi; viewport=$(dumpsys input | sed -n \"s/.*Viewport INTERNAL: displayId=$display_id,.*logicalFrame=\\[0, 0, \\([0-9][0-9]*\\), \\([0-9][0-9]*\\)\\].*/\\1 \\2/p\" | head -n 1); set -- $viewport; width=${1:-1280}; height=${2:-720}; input -d \"$display_id\" tap $((width / 2)) $((height * 7 / 10))",
+    "cmd": "display_id=$(dumpsys activity activities | sed -n '/^[[:space:]]*Display #[0-9]/{s/^[[:space:]]*Display #\\([0-9][0-9]*\\).*/\\1/;h};/topResumedActivity=.*com\\.netease\\.onmyoji/{g;p}'); if [ -z \"$display_id\" ]; then display_id=0; fi; viewport=$(dumpsys input | sed -n \"s/.*Viewport INTERNAL: displayId=$display_id,.*logicalFrame=\\[0, 0, \\([0-9][0-9]*\\), \\([0-9][0-9]*\\)\\].*/\\1 \\2/p\" | head -n 1); set -- $viewport; width=${1:-1280}; height=${2:-720}; tap_x=$((width / 2)); tap_y=$((height * 19 / 20)); echo \"guild_barrier_v2_settlement display_id=$display_id viewport=${width}x${height} tap=$tap_x,$tap_y\"; input -d \"$display_id\" tap \"$tap_x\" \"$tap_y\"",
     "expected": "点击屏幕|屏幕继续",
-    "max_hit": 3,
     "only_rec": true,
     "post_delay": 1000,
     "rate_limit": 1000,
@@ -883,8 +882,7 @@
     "custom_action": "ClearHitCount",
     "custom_action_param": {
       "node_names": [
-        "寮突V2-记录最后一个名字并进攻",
-        "寮突V2-继续点击战斗结算"
+        "寮突V2-记录最后一个名字并进攻"
       ]
     },
     "expected": "击败次数",
