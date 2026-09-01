@@ -35,8 +35,8 @@ MaaYYs 是一个面向《阴阳师》模拟器环境的自动化项目，项目�
 | --- | --- |
 | Windows x64 | `MaaYYs-win-x86_64-vx.x.x-MXU.zip` |
 | Windows ARM64 | `MaaYYs-win-aarch64-vx.x.x-MXU.zip` |
-| macOS Intel | `MaaYYs-macos-x86_64-vx.x.x-MXU.tar.gz` |
-| macOS Apple Silicon | `MaaYYs-macos-aarch64-vx.x.x-MXU.tar.gz` |
+| macOS Intel | `MaaYYs-macos-x86_64-vx.x.x-MXU.dmg`（另提供 `.app.zip`） |
+| macOS Apple Silicon | `MaaYYs-macos-aarch64-vx.x.x-MXU.dmg`（另提供 `.app.zip`） |
 | Linux x64 | `MaaYYs-linux-x86_64-vx.x.x-MXU.tar.gz` |
 
 绝大多数 Windows 用户请选择 `MaaYYs-win-x86_64-*-MXU.zip`。
@@ -46,7 +46,7 @@ MaaYYs 是一个面向《阴阳师》模拟器环境的自动化项目，项目�
 ## 快速开始
 
 1. 下载并解压 `MaaYYs-平台-架构-版本-MXU` 全量包。
-2. Windows 双击运行 `mxu.exe`；macOS / Linux 运行解压目录中的 `mxu`。
+2. Windows 双击运行 `mxu.exe`；macOS 打开 DMG 后将 `MaaYYs.app` 拖入“应用程序”，或解压 `.app.zip` 后运行；Linux 运行解压目录中的 `mxu`。
 
 ### Android / ADB
 
@@ -59,7 +59,7 @@ MaaYYs 是一个面向《阴阳师》模拟器环境的自动化项目，项目�
 2. 启动游戏，在 MXU 中添加设备并选择 `PlayCover`，填写 MaaTools 的实际监听地址；`127.0.0.1:1718` 仅为示例，不应写死，`1717` 也可能已被 MAA 占用。
 3. 保持横屏即可。`controller` 的 `display_short_side: 720` 是截图与识别的内部缩放基准，不要求 PlayCover 游戏窗口实际设置为 1280×720；可参考 MAA 手册按需调整分辨率，若识别异常可尝试 1080P。然后选择资源并配置任务。
 
-更详细的图文教程见 [doc/使用指南.md](doc/使用指南.md)。
+更详细的图文教程见 [doc/使用指南.md](doc/使用指南.md)；macOS PlayCover 的完整配置流程见 [doc/macOS PlayCover 使用手册.md](doc/macOS%20PlayCover%20使用手册.md)。
 
 ## 支持的资源
 
@@ -269,8 +269,8 @@ powershell -NoProfile -Command "Get-Content -Raw interface.json | ConvertFrom-Js
 - 推送形如 `v1.2.3`、`v1.2.3-beta.1` 的 tag 会触发正式发布。
 - 发布时会把 `interface.json` 中的 `version` 更新为 tag。
 - CI 会编译 Go agent，并下载固定版本 MaaFramework（v5.11.1）与 MXU。
-- 打包内容包括 `maafw/`、`mxu` 或 `mxu.exe`、`agent/`、`assets/`、`resource_pack/`、`tasks/`、`interface.json`、`LICENSE`、`README.md`。
-- Windows 产物发布为 `.zip`，macOS / Linux 产物发布为 `.tar.gz`。
+- 打包内容包括 `maafw/`、`mxu` 或 `mxu.exe`、`agent/`、`assets/`、`preset/`、`resource_pack/`、`tasks/`、`interface.json`、`LICENSE`、`README.md`。
+- Windows 产物发布为 `.zip`，Linux 产物发布为 `.tar.gz`；macOS 同时发布标准 `.app.zip` 与 `.dmg`。
 - Release note 由 `git-cliff` 和 `.github/cliff.toml` 生成。
 - Release 创建后会触发 Mirror 酱上传与 release note 同步。
 
