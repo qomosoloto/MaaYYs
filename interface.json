@@ -2,15 +2,12 @@
   "interface_version": 2,
   "name": "MaaYYs",
   "label": "阴阳师",
-  "version": "v3.15.0",
+  "version": "v3.15.0-local",
   "description": "阴阳师自动化脚本",
   "icon": "/assets/logo/logo.png",
   "welcome": "assets/Announcement/1.使用须知.md",
   "license": "./LICENSE",
   "contact": "邮箱 :disjoint7@163.com    qq群:645818258",
-  "github": "https://github.com/TanyaShue/MaaYYs",
-  "mirrorchyan_rid": "MaaYYs",
-  "mirrorchyan_multiplatform": true,
   "telemetry": {
     "sentry": {
       "dsn": "https://4300024a59a9fd38c9b84c713a222fc2@o4511861435465728.ingest.us.sentry.io/4511861444182016",
