@@ -2,7 +2,7 @@
     "task": [
         {
             "name": "自动购物",
-            "label": "自动购物",
+            "label": "购物",
             "entry": "商店购买",
             "group": ["daily"],
             "option": [

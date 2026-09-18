@@ -2,7 +2,7 @@
     "task": [
         {
             "name": "自动寮突破",
-            "label": "自动寮突破",
+            "label": "寮突破",
             "entry": "寮突",
             "group": ["standalone"],
             "option": [
