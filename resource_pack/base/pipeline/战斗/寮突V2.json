@@ -78,7 +78,58 @@
     ],
     "recognition": "DirectHit",
     "pre_delay": 0,
-    "post_delay": 0
+    "post_delay": 0,
+    "rate_limit": 500,
+    "timeout": 8000,
+    "on_error": [
+      "寮突V210",
+      "寮突V28",
+      "寮突V2-进攻前恢复",
+      "寮突V2-进攻前恢复耗尽"
+    ]
+  },
+  "寮突V2-进攻前恢复": {
+    "recognition": "DirectHit",
+    "action": "Custom",
+    "custom_action": "ClearHitCount",
+    "custom_action_param": {
+      "node_name": "寮突V2-记录最后一个名字并进攻"
+    },
+    "max_hit": 3,
+    "focus": {
+      "Node.Action.Starting": "寮突破 V2：8秒内未能配对玩家名与进攻按钮，关闭弹窗后重新进入（连续最多恢复3次，不重复点击进攻）"
+    },
+    "next": [
+      "寮突V2-进攻前关闭目标弹窗",
+      "寮突V2-已攻破-关闭结界突破",
+      "寮突V2-已攻破-恢复阴阳寮突破"
+    ],
+    "on_error": [
+      "寮突V2-进攻前恢复耗尽"
+    ],
+    "timeout": 8000
+  },
+  "寮突V2-进攻前关闭目标弹窗": {
+    "recognition": "OCR",
+    "expected": "进攻",
+    "roi": [375, 102, 722, 617],
+    "action": "Click",
+    "target": [1110, 480, 30, 30],
+    "post_delay": 500,
+    "next": [
+      "寮突V2-已攻破-关闭结界突破"
+    ],
+    "on_error": [
+      "寮突V2-进攻前恢复耗尽"
+    ],
+    "timeout": 8000
+  },
+  "寮突V2-进攻前恢复耗尽": {
+    "recognition": "DirectHit",
+    "action": "StopTask",
+    "focus": {
+      "Node.Action.Starting": "寮突破 V2：进攻前连续恢复已达3次或无法关闭目标弹窗，停止任务，请检查截图与识别日志"
+    }
   },
   "寮突V2-识别是否已经攻破": {
     "enabled": false,
@@ -198,13 +249,13 @@
       "target_layouts": [
         {
           "name_node": "寮突V2-识别当前目标玩家名-左",
-          "attack_node": "寮突V2-识别进攻按钮",
-          "attack_center_x_max": 640
+          "attack_node": "寮突V2-识别进攻按钮-左",
+          "name_roi_offset": [-125, -225, 260, 85]
         },
         {
           "name_node": "寮突V2-识别当前目标玩家名-右",
-          "attack_node": "寮突V2-识别进攻按钮",
-          "attack_center_x_min": 640
+          "attack_node": "寮突V2-识别进攻按钮-右",
+          "name_roi_offset": [-125, -225, 260, 85]
         }
       ]
     },
@@ -229,13 +280,13 @@
       "target_layouts": [
         {
           "name_node": "寮突V2-识别当前目标玩家名-左",
-          "attack_node": "寮突V2-识别进攻按钮",
-          "attack_center_x_max": 640
+          "attack_node": "寮突V2-识别进攻按钮-左",
+          "name_roi_offset": [-125, -225, 260, 85]
         },
         {
           "name_node": "寮突V2-识别当前目标玩家名-右",
-          "attack_node": "寮突V2-识别进攻按钮",
-          "attack_center_x_min": 640
+          "attack_node": "寮突V2-识别进攻按钮-右",
+          "name_roi_offset": [-125, -225, 260, 85]
         }
       ]
     },
@@ -273,6 +324,16 @@
       603,
       98
     ]
+  },
+  "寮突V2-识别进攻按钮-左": {
+    "recognition": "OCR",
+    "expected": "进攻",
+    "roi": [580, 330, 175, 360]
+  },
+  "寮突V2-识别进攻按钮-右": {
+    "recognition": "OCR",
+    "expected": "进攻",
+    "roi": [900, 330, 180, 360]
   },
   "寮突V2-识别当前目标玩家名-右": {
     "recognition": "OCR",
@@ -621,7 +682,8 @@
     "expected": "结界突破",
     "next": [
       "寮突V24",
-      "[JumpBack]寮突V25"
+      "[JumpBack]寮突V25",
+      "寮突V2-识别是否没开寮突"
     ],
     "recognition": "OCR",
     "roi": [
@@ -630,6 +692,14 @@
       235,
       84
     ]
+  },
+  "寮突V2-识别是否没开寮突": {
+    "expected": "请等待会长|或副会长|进行选择",
+    "next": [
+      "导航-庭院"
+    ],
+    "recognition": "OCR",
+    "roi": [68, 460, 1106, 257]
   },
   "寮突V220": {
     "expected": "1/6|2/6|3/6|4/6|5/6|6/6",
@@ -882,7 +952,8 @@
     "custom_action": "ClearHitCount",
     "custom_action_param": {
       "node_names": [
-        "寮突V2-记录最后一个名字并进攻"
+        "寮突V2-记录最后一个名字并进攻",
+        "寮突V2-进攻前恢复"
       ]
     },
     "expected": "击败次数",

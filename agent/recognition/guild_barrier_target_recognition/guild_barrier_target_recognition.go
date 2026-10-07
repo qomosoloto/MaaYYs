@@ -54,6 +54,10 @@ type recognitionDetail struct {
 	Best struct {
 		Text string `json:"text"`
 	} `json:"best"`
+	Filtered []struct {
+		Text  string  `json:"text"`
+		Score float64 `json:"score"`
+	} `json:"filtered"`
 }
 
 type taskObservation struct {
@@ -66,13 +70,14 @@ type taskObservation struct {
 }
 
 type targetLayout struct {
-	NameNode         string `json:"name_node"`
-	AttackNode       string `json:"attack_node"`
-	AttackCenterXMin *int   `json:"attack_center_x_min,omitempty"`
-	AttackCenterXMax *int   `json:"attack_center_x_max,omitempty"`
+	NameNode         string    `json:"name_node"`
+	AttackNode       string    `json:"attack_node"`
+	AttackCenterXMin *int      `json:"attack_center_x_min,omitempty"`
+	AttackCenterXMax *int      `json:"attack_center_x_max,omitempty"`
+	NameROIOffset    *maa.Rect `json:"name_roi_offset,omitempty"`
 }
 
-type recognitionLookup func(node string) (*maa.RecognitionDetail, error)
+type recognitionLookup func(node string, roi *maa.Rect) (*maa.RecognitionDetail, error)
 
 var _ maa.CustomRecognitionRunner = &GuildBarrierTargetRecognition{}
 
@@ -198,6 +203,9 @@ func parseParams(arg *maa.CustomRecognitionArg) (*recognitionParams, error) {
 		if strings.TrimSpace(layout.NameNode) == "" || strings.TrimSpace(layout.AttackNode) == "" {
 			return nil, fmt.Errorf("target_layouts[%d] 必须同时提供 name_node 和 attack_node", index)
 		}
+		if layout.NameROIOffset != nil && (layout.NameROIOffset.Width() <= 0 || layout.NameROIOffset.Height() <= 0) {
+			return nil, fmt.Errorf("target_layouts[%d].name_roi_offset 的宽高必须大于 0", index)
+		}
 		if layout.AttackCenterXMin != nil && *layout.AttackCenterXMin < 0 {
 			return nil, fmt.Errorf("target_layouts[%d].attack_center_x_min 不能小于 0", index)
 		}
@@ -222,7 +230,10 @@ func recognizeCurrentTarget(
 		return "", maa.Rect{}, false
 	}
 
-	return recognizeCurrentTargetWith(func(node string) (*maa.RecognitionDetail, error) {
+	return recognizeCurrentTargetWith(func(node string, roi *maa.Rect) (*maa.RecognitionDetail, error) {
+		if roi != nil {
+			return ctx.RunRecognition(node, arg.Img, map[string]any{node: map[string]any{"roi": *roi}})
+		}
 		return ctx.RunRecognition(node, arg.Img, nil)
 	}, layouts...)
 }
@@ -232,12 +243,16 @@ func recognizeCurrentTargetWith(lookup recognitionLookup, layouts ...targetLayou
 		layouts = defaultTargetLayouts
 	}
 	for _, layout := range layouts {
-		nameDetail, err := lookup(layout.NameNode)
-		if err != nil || nameDetail == nil || !nameDetail.Hit {
-			continue
+		var nameDetail *maa.RecognitionDetail
+		var err error
+		if layout.NameROIOffset == nil {
+			nameDetail, err = lookup(layout.NameNode, nil)
+			if err != nil || nameDetail == nil || !nameDetail.Hit {
+				continue
+			}
 		}
 
-		attackDetail, err := lookup(layout.AttackNode)
+		attackDetail, err := lookup(layout.AttackNode, nil)
 		if err != nil || attackDetail == nil || !attackDetail.Hit {
 			continue
 		}
@@ -248,6 +263,14 @@ func recognizeCurrentTargetWith(lookup recognitionLookup, layouts ...targetLayou
 		if layout.AttackCenterXMax != nil && attackCenterX >= *layout.AttackCenterXMax {
 			continue
 		}
+		if offset := layout.NameROIOffset; offset != nil {
+			// 名字跟随按钮所在弹窗移动，不能读取固定位置的背景玩家。
+			roi := maa.Rect{attackDetail.Box.X() + offset.X(), attackDetail.Box.Y() + offset.Y(), offset.Width(), offset.Height()}
+			nameDetail, err = lookup(layout.NameNode, &roi)
+			if err != nil || nameDetail == nil || !nameDetail.Hit {
+				continue
+			}
+		}
 
 		var detail recognitionDetail
 		if err := json.Unmarshal([]byte(nameDetail.DetailJson), &detail); err != nil {
@@ -255,6 +278,14 @@ func recognizeCurrentTargetWith(lookup recognitionLookup, layouts ...targetLayou
 		}
 
 		targetName := sanitizeTargetName(detail.Best.Text)
+		if layout.NameROIOffset != nil {
+			bestScore := -1.0
+			for _, candidate := range detail.Filtered {
+				if text := sanitizeTargetName(candidate.Text); text != "" && candidate.Score > bestScore {
+					targetName, bestScore = text, candidate.Score
+				}
+			}
+		}
 		if targetName != "" {
 			return targetName, attackDetail.Box, true
 		}
