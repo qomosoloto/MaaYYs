@@ -10,11 +10,14 @@
       "enum": [
         "ConfigValueWriteRecognition",
         "ConfigValueCheckRecognition",
+        "WeekStatusWriteRecognition",
+        "WeekStatusCheckRecognition",
         "CoBattleTargetRecognition",
         "GuildBarrierTargetRecognition",
         "MyRecognizer",
         "OCRResultCounterRecognition",
-        "TaskCounterRecognition"
+        "TaskCounterRecognition",
+        "TimeCheckRecognition"
       ]
     }
   },
@@ -23,11 +26,14 @@
     "oneOf": [
       { "$ref": "#/$defs/ConfigValueWriteRecognition" },
       { "$ref": "#/$defs/ConfigValueCheckRecognition" },
+      { "$ref": "#/$defs/WeekStatusWriteRecognition" },
+      { "$ref": "#/$defs/WeekStatusCheckRecognition" },
       { "$ref": "#/$defs/CoBattleTargetRecognition" },
       { "$ref": "#/$defs/GuildBarrierTargetRecognition" },
       { "$ref": "#/$defs/MyRecognizer" },
       { "$ref": "#/$defs/OCRResultCounterRecognition" },
-      { "$ref": "#/$defs/TaskCounterRecognition" }
+      { "$ref": "#/$defs/TaskCounterRecognition" },
+      { "$ref": "#/$defs/TimeCheckRecognition" }
     ]
   },
   "$defs": {
@@ -80,10 +86,7 @@
               ],
               "description": "用于比较的数字阈值"
             },
-            "comparison": { "$ref": "#/$defs/Comparison", "description": "首选比较参数名" },
-            "compare": { "$ref": "#/$defs/Comparison", "description": "comparison 的兼容别名" },
-            "operator": { "$ref": "#/$defs/Comparison", "description": "comparison 的兼容别名" },
-            "mode": { "$ref": "#/$defs/Comparison", "description": "comparison 的兼容别名" }
+            "comparison": { "$ref": "#/$defs/Comparison", "description": "比较符号" }
           },
           "required": ["key", "value"],
           "additionalProperties": false
@@ -91,17 +94,56 @@
       },
       "required": ["custom_recognition"]
     },
+    "WeekStatusWriteRecognition": {
+      "title": "写入本周状态时间",
+      "description": "将当前时间写入 assets/recognition_state.json 的指定状态键。",
+      "allOf": [{ "$ref": "#/$defs/RequiredParam" }],
+      "properties": {
+        "custom_recognition": { "const": "WeekStatusWriteRecognition" },
+        "custom_recognition_param": {
+          "type": "object",
+          "properties": {
+            "key": { "$ref": "#/$defs/NonEmptyString", "description": "状态存储键" }
+          },
+          "required": ["key"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["custom_recognition"]
+    },
+    "WeekStatusCheckRecognition": {
+      "title": "检查本周状态时间",
+      "description": "将指定状态键中存储的时间与当前时间比较，默认要求位于同一周，也可要求不位于同一周期。",
+      "allOf": [{ "$ref": "#/$defs/RequiredParam" }],
+      "properties": {
+        "custom_recognition": { "const": "WeekStatusCheckRecognition" },
+        "custom_recognition_param": {
+          "type": "object",
+          "properties": {
+            "key": { "$ref": "#/$defs/NonEmptyString", "description": "状态存储键" },
+            "comparison": { "$ref": "#/$defs/WeekStatusComparison", "description": "比较两个时间是否位于同一周、同一月或同一天" },
+            "match": { "$ref": "#/$defs/WeekStatusMatch", "description": "same：要求位于同一周期；different：要求不位于同一周期" }
+          },
+          "required": ["key"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["custom_recognition"]
+    },
+    "WeekStatusComparison": {
+      "type": "string",
+      "default": "week",
+      "enum": ["week", "month", "day"]
+    },
+    "WeekStatusMatch": {
+      "type": "string",
+      "default": "same",
+      "enum": ["same", "different"]
+    },
     "Comparison": {
       "type": "string",
       "default": "<",
-      "enum": [
-        "<", "lt", "less", "小于",
-        ">", "gt", "greater", "大于",
-        "=", "==", "eq", "equal", "equals", "等于",
-        "<=", "=<", "le", "lte", "less_equal", "less than or equal", "小于等于", "不大于",
-        ">=", "=>", "ge", "gte", "greater_equal", "greater than or equal", "大于等于", "不小于",
-        "!=", "<>", "ne", "neq", "not_equal", "not equal", "不等于"
-      ]
+      "enum": ["<", ">", "==", "<=", ">=", "!="]
     },
     "CoBattleTargetRecognition": {
       "title": "协战目标识别",
@@ -267,6 +309,53 @@
         }
       },
       "required": ["custom_recognition"]
+    },
+    "TimeCheckRecognition": {
+      "title": "日期时间检查",
+      "description": "检查当前日期和时间是否满足指定范围：满足时识别成功，否则识别失败；参数与 TimeCheck 自定义动作一致。",
+      "allOf": [{ "$ref": "#/$defs/RequiredParam" }],
+      "properties": {
+        "custom_recognition": { "const": "TimeCheckRecognition" },
+        "custom_recognition_param": {
+          "type": "object",
+          "properties": {
+            "start": { "type": "string", "pattern": "^(?:[0-9]|[01][0-9]|2[0-3]):[0-5][0-9](?::[0-5][0-9])?$", "description": "开始时间，H:mm、HH:mm、H:mm:ss 或 HH:mm:ss" },
+            "end": { "type": "string", "pattern": "^(?:[0-9]|[01][0-9]|2[0-3]):[0-5][0-9](?::[0-5][0-9])?$", "description": "结束时间，H:mm、HH:mm、H:mm:ss 或 HH:mm:ss；允许跨天" },
+            "mode": { "type": "string", "enum": ["in", "out"], "default": "in", "description": "判断当前时间在范围内或范围外" },
+            "date_rule": { "$ref": "#/$defs/DateRule" }
+          },
+          "required": ["start", "end"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["custom_recognition"]
+    },
+    "DateRule": {
+      "type": "object",
+      "description": "可选日期过滤规则；省略或 type=none 时不过滤日期。",
+      "properties": {
+        "type": { "type": "string", "enum": ["none", "date", "dates", "month_day", "week"], "default": "none" },
+        "value": {}
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "date" } }, "required": ["type"] },
+          "then": { "properties": { "value": { "type": "string", "format": "date" } }, "required": ["value"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "dates" } }, "required": ["type"] },
+          "then": { "properties": { "value": { "type": "array", "items": { "type": "string", "format": "date" }, "minItems": 1 } }, "required": ["value"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "month_day" } }, "required": ["type"] },
+          "then": { "properties": { "value": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 31 }, "minItems": 1, "uniqueItems": true } }, "required": ["value"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "week" } }, "required": ["type"] },
+          "then": { "properties": { "value": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 7 }, "minItems": 1, "uniqueItems": true } }, "required": ["value"] }
+        }
+      ],
+      "additionalProperties": false
     }
   }
 }

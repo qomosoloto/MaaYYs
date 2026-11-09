@@ -17,6 +17,84 @@
       167
     ]
   },
+  "阴阳寮奖励-流程出错": {
+    "focus": {
+      "Node.Recognition.Succeeded": "流程出错，联系作者！！！"
+    },
+    "recognition": "DirectHit"
+  },
+  "阴阳寮奖励-点击需要寄养的式神": {
+    "action": "Click",
+    "expected": "式神育成",
+    "post_delay": 1000,
+    "recognition": "OCR",
+    "roi": [
+      0,
+      0,
+      273,
+      100
+    ],
+    "target": [
+      153,
+      497,
+      119,
+      183
+    ]
+  },
+  "阴阳寮奖励-确保没有确定按钮": {
+    "expected": "确定",
+    "focus": {
+      "Node.Recognition.Succeeded": "寄养式神完成"
+    },
+    "inverse": true,
+    "next": [
+      "阴阳寮奖励领取_识别结界特征_2",
+      "[JumpBack]阴阳寮奖励领取_结界奖励领取_寄养式神_返回结界",
+      "[JumpBack]阴阳寮奖励领取_结界奖励领取_寄养式神_返回结界-模板匹配"
+    ],
+    "post_delay": 1000,
+    "pre_delay": 1000,
+    "recognition": "OCR",
+    "roi": [
+      669,
+      515,
+      135,
+      56
+    ]
+  },
+  "阴阳寮奖励-确保点击到进入结界按钮": {
+    "expected": "进入结界",
+    "inverse": true,
+    "next": [
+      "阴阳寮奖励领取_结界奖励领取_寄养式神_选择第一个式神寄养"
+    ],
+    "on_error": [
+      "阴阳寮奖励-流程出错"
+    ],
+    "post_delay": 3000,
+    "recognition": "OCR",
+    "roi": [
+      786,
+      532,
+      182,
+      64
+    ]
+  },
+  "阴阳寮奖励-确定点击到需要寄养的式神": {
+    "action": "Click",
+    "expected": "确认寄养|所选式神",
+    "next": [
+      "阴阳寮奖励-确保没有确定按钮",
+      "[JumpBack]阴阳寮奖励领取_结界奖励领取_寄养式神_确定第一个式神寄养"
+    ],
+    "recognition": "OCR",
+    "roi": [
+      493,
+      137,
+      308,
+      49
+    ]
+  },
   "阴阳寮奖励1": {
     "action": "Click",
     "recognition": "TemplateMatch",
@@ -393,6 +471,7 @@
   },
   "阴阳寮奖励39": {
     "action": "Click",
+    "max_hit": 3,
     "recognition": "TemplateMatch",
     "roi": [
       731,
@@ -405,6 +484,7 @@
       "日常/阴阳寮奖励/阴阳寮奖励39_2.png",
       "日常/阴阳寮奖励/阴阳寮奖励39_3.png",
       "日常/阴阳寮奖励/阴阳寮奖励39_4.png",
+      "日常/阴阳寮奖励/阴阳寮奖励39_1.png",
       "阴阳寮奖励/阴阳寮奖励39.png"
     ]
   },
@@ -540,9 +620,6 @@
   "阴阳寮奖励领取_结界奖励领取_寄养式神_点击进入寄养结界": {
     "action": "Click",
     "expected": "进入结界",
-    "next": [
-      "阴阳寮奖励领取_结界奖励领取_寄养式神_选择第一个式神寄养"
-    ],
     "post_delay": 3000,
     "recognition": "OCR",
     "roi": [
@@ -555,11 +632,6 @@
   "阴阳寮奖励领取_结界奖励领取_寄养式神_确定第一个式神寄养": {
     "action": "Click",
     "expected": "确定",
-    "next": [
-      "阴阳寮奖励领取_识别结界特征_2",
-      "[JumpBack]阴阳寮奖励领取_结界奖励领取_寄养式神_返回结界",
-      "[JumpBack]阴阳寮奖励领取_结界奖励领取_寄养式神_返回结界-模板匹配"
-    ],
     "post_delay": 1000,
     "pre_delay": 1000,
     "recognition": "OCR",
@@ -610,11 +682,13 @@
     "action": "Custom",
     "custom_action": "AutoFoster",
     "custom_action_param": {
+      "DirectSelectThreshold": 76,
       "FosterTarget": 1
     },
     "expected": "好友|跨区",
     "next": [
-      "阴阳寮奖励领取_结界奖励领取_寄养式神_点击进入寄养结界"
+      "阴阳寮奖励-确保点击到进入结界按钮",
+      "[JumpBack]阴阳寮奖励领取_结界奖励领取_寄养式神_点击进入寄养结界"
     ],
     "pre_wait_freezes": 200,
     "recognition": "OCR",
@@ -629,7 +703,8 @@
     "action": "Click",
     "expected": "式神育成",
     "next": [
-      "阴阳寮奖励领取_结界奖励领取_寄养式神_确定第一个式神寄养"
+      "阴阳寮奖励-确定点击到需要寄养的式神",
+      "[JumpBack]阴阳寮奖励-点击需要寄养的式神"
     ],
     "post_delay": 1000,
     "recognition": "OCR",
@@ -733,7 +808,7 @@
       "阴阳寮奖励领取_结界奖励领取_点击一下屏幕"
     ],
     "post_delay": 1000,
-    "recognition": "FeatureMatch",
+    "recognition": "TemplateMatch",
     "roi": [
       533,
       461,
@@ -763,7 +838,7 @@
       "[JumpBack]阴阳寮奖励领取_结界奖励领取_关闭食盒界面"
     ],
     "post_delay": 1000,
-    "recognition": "FeatureMatch",
+    "recognition": "TemplateMatch",
     "template": "阴阳寮/阴阳寮_结界_经验_提取.png",
     "timeout": 3000
   },

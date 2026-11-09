@@ -13,7 +13,7 @@
     },
     "地鬼-匹配地鬼特征-式神录-模板": {
         "action": "Click",
-        "next": ["装备地狱鬼王预设", "[JumpBack]地鬼_点击式神录", "[JumpBack]地鬼_点击式神录-模板匹配", "[JumpBack]地鬼_点击式神录-特征匹配"],
+        "next": ["装备地狱鬼王预设", "[JumpBack]地鬼_点击式神录", "[JumpBack]地鬼_点击式神录-模板匹配", "[JumpBack]地鬼_点击式神录-特征匹配", "[JumpBack]通用-拒绝下载-识别到下载二字"],
         "recognition": "TemplateMatch",
         "roi": [1127, 464, 151, 137],
         "template": ["自动地鬼/地鬼_点击式神录-模板匹配_1.png"]
@@ -28,7 +28,7 @@
         "focus": {
             "Node.Recognition.Starting": "开始挑战地鬼"
         },
-        "next": ["导航-庭院"],
+        "next": ["自动地鬼-今天地鬼状态写入"],
         "post_delay": 2000,
         "recognition": "DirectHit"
     },
@@ -42,7 +42,7 @@
         "focus": {
             "Node.Recognition.Starting": "开始挑战地鬼"
         },
-        "next": ["导航-庭院"],
+        "next": ["自动地鬼-今天地鬼状态写入"],
         "post_delay": 2000,
         "recognition": "DirectHit"
     },
@@ -212,7 +212,7 @@
             "Node.Action.Failed": "[warning]不处于对应时间内,返回,任务结束",
             "Node.Action.Starting": "开始自动地鬼时间检查"
         },
-        "next": ["自动地鬼"],
+        "next": ["自动地鬼-检查今天是否已经执行过", "自动地鬼"],
         "on_error": ["导航-庭院"],
         "recognition": "DirectHit"
     },
@@ -223,7 +223,7 @@
         "timeout": 200000
     },
     "自动地鬼": {
-        "next": ["地鬼-识别是否位于地域鬼王界面", "地鬼-匹配地鬼特征-式神录-模板", "[JumpBack]导航-地域鬼王"],
+        "next": ["地鬼-识别是否位于地域鬼王界面", "地鬼-匹配地鬼特征-式神录-模板", "[JumpBack]导航-地域鬼王", "[JumpBack]通用-拒绝下载-识别到下载二字"],
         "recognition": "DirectHit"
     },
     "自动地鬼-不开悬赏-识别挑战": {
@@ -241,6 +241,14 @@
         "threshold": 0.8,
         "timeout": 500
     },
+    "自动地鬼-今天地鬼状态写入": {
+        "custom_recognition": "WeekStatusWriteRecognition",
+        "custom_recognition_param": {
+            "key": "地域鬼王"
+        },
+        "next": ["导航-庭院"],
+        "recognition": "Custom"
+    },
     "自动地鬼-准备战斗": {
         "action": "Click",
         "expected": "准备",
@@ -255,6 +263,16 @@
         "recognition": "TemplateMatch",
         "roi": [1024, 479, 236, 164],
         "template": ["战斗/自动地鬼/自动地鬼-匹配挑战图片_1.png.png"]
+    },
+    "自动地鬼-检查今天是否已经执行过": {
+        "custom_recognition": "WeekStatusCheckRecognition",
+        "custom_recognition_param": {
+            "comparison": "day",
+            "key": "地域鬼王",
+            "match": "same"
+        },
+        "next": ["导航-庭院"],
+        "recognition": "Custom"
     },
     "自动地鬼-没找到悬赏": {
         "action": "Click",
@@ -273,27 +291,27 @@
     "自动地鬼-点击解锁图标": {
         "action": "Click",
         "expected": 2,
-        "model": "special-icon-v0.1.1.onnx",
+        "model": "special-icon-v1.0.2.onnx",
         "post_delay": 1000,
         "recognition": "NeuralNetworkDetect"
     },
     "自动地鬼-点击锁定图标来解锁": {
         "action": "Click",
         "expected": 3,
-        "model": "special-icon-v0.1.1.onnx",
+        "model": "special-icon-v1.0.2.onnx",
         "post_delay": 1000,
         "recognition": "NeuralNetworkDetect"
     },
     "自动地鬼-识别解锁图标": {
         "expected": 2,
-        "model": "special-icon-v0.1.1.onnx",
+        "model": "special-icon-v1.0.2.onnx",
         "next": ["挑战地鬼"],
         "post_delay": 1000,
         "recognition": "NeuralNetworkDetect"
     },
     "自动地鬼-识别锁定图标": {
         "expected": 3,
-        "model": "special-icon-v0.1.1.onnx",
+        "model": "special-icon-v1.0.2.onnx",
         "next": ["挑战地鬼"],
         "recognition": "NeuralNetworkDetect"
     },

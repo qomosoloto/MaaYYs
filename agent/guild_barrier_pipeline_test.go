@@ -11,7 +11,7 @@ import (
 const (
 	guildBarrierPipelinePath       = "../resource_pack/base/pipeline/战斗/寮突.json"
 	guildBarrierV2PipelinePath     = "../resource_pack/base/pipeline/战斗/寮突V2.json"
-	guildBarrierTaskPath           = "../tasks/自动寮突破.json"
+	guildBarrierTaskPath           = "../tasks/寮突破.json"
 	guildBarrierV2TaskPath         = "../tasks/自动寮突破V2.json"
 	guildBarrierInterfacePath      = "../interface.json"
 	guildBarrierV2NodePrefix       = "寮突V2"
@@ -402,7 +402,7 @@ func TestGuildBarrierV2TaskIsImportedWithoutReplacingOriginal(t *testing.T) {
 	if err := json.Unmarshal(data, &projectInterface); err != nil {
 		t.Fatalf("parse %s: %v", guildBarrierInterfacePath, err)
 	}
-	for _, want := range []string{"tasks/自动寮突破.json", "tasks/自动寮突破V2.json"} {
+	for _, want := range []string{"tasks/寮突破.json", "tasks/自动寮突破V2.json"} {
 		if !containsGuildBarrierNode(projectInterface.Import, want) {
 			t.Errorf("interface imports = %v, want %q", projectInterface.Import, want)
 		}

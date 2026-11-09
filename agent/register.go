@@ -34,6 +34,7 @@ import (
 	"maa-yys-agent/recognition/my_recognizer"
 	"maa-yys-agent/recognition/ocr_result_counter_recognition"
 	"maa-yys-agent/recognition/task_counter_recognition"
+	"maa-yys-agent/recognition/time_check_recognition"
 
 	maa "github.com/MaaXYZ/maa-framework-go/v4"
 	"github.com/rs/zerolog/log"
@@ -76,11 +77,14 @@ var customRecognitions = []struct {
 }{
 	{"ConfigValueWriteRecognition", &config_value_recognition.ConfigValueWriteRecognition{}},
 	{"ConfigValueCheckRecognition", &config_value_recognition.ConfigValueCheckRecognition{}},
+	{"WeekStatusWriteRecognition", &config_value_recognition.WeekStatusWriteRecognition{}},
+	{"WeekStatusCheckRecognition", &config_value_recognition.WeekStatusCheckRecognition{}},
 	{"CoBattleTargetRecognition", &co_battle_target_recognition.CoBattleTargetRecognition{}},
 	{"GuildBarrierTargetRecognition", &guild_barrier_target_recognition.GuildBarrierTargetRecognition{}},
 	{"MyRecognizer", &my_recognizer.MyRecognizer{}},
 	{"OCRResultCounterRecognition", &ocr_result_counter_recognition.OCRResultCounterRecognition{}},
 	{"TaskCounterRecognition", &task_counter_recognition.TaskCounterRecognition{}},
+	{"TimeCheckRecognition", &time_check_recognition.TimeCheckRecognition{}},
 }
 
 func registerAll() error {
