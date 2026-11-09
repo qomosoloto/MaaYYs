@@ -21,6 +21,8 @@ const (
 type guildBarrierPipelineNode struct {
 	Action                 string                             `json:"action"`
 	Cmd                    string                             `json:"cmd"`
+	CustomAction           string                             `json:"custom_action"`
+	Focus                  map[string]string                  `json:"focus"`
 	Recognition            string                             `json:"recognition"`
 	CustomRecognition      string                             `json:"custom_recognition"`
 	Expected               string                             `json:"expected"`
@@ -56,6 +58,7 @@ type guildBarrierTargetLayout struct {
 	AttackNode       string `json:"attack_node"`
 	AttackCenterXMin *int   `json:"attack_center_x_min"`
 	AttackCenterXMax *int   `json:"attack_center_x_max"`
+	NameROIOffset    []int  `json:"name_roi_offset"`
 }
 
 type guildBarrierCustomActionParam struct {
@@ -300,7 +303,7 @@ func TestGuildBarrierV2SettlementUsesStateDrivenTransition(t *testing.T) {
 	if !reflect.DeepEqual(ready.Next, wantNext) {
 		t.Fatalf("settlement state routing = %v, want %v", ready.Next, wantNext)
 	}
-	wantClearedNodes := []string{"寮突V2-记录最后一个名字并进攻"}
+	wantClearedNodes := []string{"寮突V2-记录最后一个名字并进攻", "寮突V2-进攻前恢复"}
 	if !reflect.DeepEqual(ready.CustomActionParam.NodeNames, wantClearedNodes) {
 		t.Fatalf("settlement ready clears = %v, want %v", ready.CustomActionParam.NodeNames, wantClearedNodes)
 	}
@@ -320,10 +323,9 @@ func TestGuildBarrierV2SettlementUsesStateDrivenTransition(t *testing.T) {
 
 func TestGuildBarrierV2UsesDedicatedTargetLayouts(t *testing.T) {
 	pipeline := loadGuildBarrierPipelineAt(t, guildBarrierV2PipelinePath)
-	boundary := 640
 	want := []guildBarrierTargetLayout{
-		{NameNode: "寮突V2-识别当前目标玩家名-左", AttackNode: "寮突V2-识别进攻按钮", AttackCenterXMax: &boundary},
-		{NameNode: "寮突V2-识别当前目标玩家名-右", AttackNode: "寮突V2-识别进攻按钮", AttackCenterXMin: &boundary},
+		{NameNode: "寮突V2-识别当前目标玩家名-左", AttackNode: "寮突V2-识别进攻按钮-左", NameROIOffset: []int{-125, -225, 260, 85}},
+		{NameNode: "寮突V2-识别当前目标玩家名-右", AttackNode: "寮突V2-识别进攻按钮-右", NameROIOffset: []int{-125, -225, 260, 85}},
 	}
 
 	for _, nodeName := range []string{"寮突V2-开始观察当前目标", "寮突V2-同一目标持续停留"} {
@@ -337,6 +339,97 @@ func TestGuildBarrierV2UsesDedicatedTargetLayouts(t *testing.T) {
 	}
 	if !pipeline["寮突V2-开始观察当前目标"].CustomRecognitionParam.RequireTarget {
 		t.Fatal("V2 prepared attack must reject a missing player/button pair")
+	}
+	original := loadGuildBarrierPipeline(t)
+	for _, suffix := range []string{"识别当前目标玩家名-左", "识别当前目标玩家名-右"} {
+		if got, want := pipeline["寮突V2-"+suffix].ROI, original["寮突-"+suffix].ROI; !reflect.DeepEqual(got, want) {
+			t.Errorf("V2 %s ROI = %v, want original paired ROI %v", suffix, got, want)
+		}
+	}
+	for node, want := range map[string][]int{
+		"寮突V2-识别进攻按钮-左": {580, 330, 175, 360},
+		"寮突V2-识别进攻按钮-右": {900, 330, 180, 360},
+	} {
+		if got := pipeline[node].ROI; !reflect.DeepEqual(got, want) {
+			t.Errorf("%s ROI = %v, want moving-popup search area %v", node, got, want)
+		}
+	}
+}
+
+func TestGuildBarrierV2PreAttackTimeoutHasBoundedLocalRecovery(t *testing.T) {
+	pipeline := loadGuildBarrierPipelineAt(t, guildBarrierV2PipelinePath)
+	record := pipeline["寮突V2-记录最后一个名字并进攻"]
+	want := []string{"寮突V210", "寮突V28", "寮突V2-进攻前恢复", "寮突V2-进攻前恢复耗尽"}
+	if record.Timeout != 8000 || record.RateLimit != 500 || !reflect.DeepEqual([]string(record.OnError), want) {
+		t.Fatalf("pre-attack timeout must be owned by the parent with local recovery: %+v", record)
+	}
+	recovery := pipeline["寮突V2-进攻前恢复"]
+	if recovery.MaxHit == nil || *recovery.MaxHit != 3 || recovery.CustomAction != "ClearHitCount" ||
+		recovery.CustomActionParam.NodeName != "寮突V2-记录最后一个名字并进攻" {
+		t.Fatalf("pre-attack recovery must clear the one-shot gate and allow only three consecutive recoveries: %+v", recovery)
+	}
+	if len(recovery.Focus) == 0 || !containsGuildBarrierNode(recovery.Next, "寮突V2-进攻前关闭目标弹窗") {
+		t.Fatalf("recovery must report its reason and dismiss the target popup: %+v", recovery)
+	}
+	stop := pipeline["寮突V2-进攻前恢复耗尽"]
+	if stop.Recognition != "DirectHit" || stop.Action != "StopTask" || len(stop.Focus) == 0 {
+		t.Fatalf("exhausted recovery must explicitly stop with a visible reason: %+v", stop)
+	}
+	for name, node := range pipeline {
+		if containsGuildBarrierNode(node.CustomActionParam.NodeNames, "寮突V2-进攻前恢复") && name != "寮突V2-结算后列表就绪" {
+			t.Errorf("%s must not reset recovery attempts before a completed battle", name)
+		}
+	}
+	wantCleared := []string{"寮突V2-记录最后一个名字并进攻", "寮突V2-进攻前恢复"}
+	if got := pipeline["寮突V2-结算后列表就绪"].CustomActionParam.NodeNames; !reflect.DeepEqual(got, wantCleared) {
+		t.Fatalf("settlement clears = %v, want %v", got, wantCleared)
+	}
+}
+
+func TestGuildBarrierV2RetainsOriginalUnopenedState(t *testing.T) {
+	original := loadGuildBarrierPipeline(t)
+	pipeline := loadGuildBarrierPipelineAt(t, guildBarrierV2PipelinePath)
+	if !containsGuildBarrierNode(pipeline["寮突V22"].Next, "寮突V2-识别是否没开寮突") {
+		t.Fatal("V2 must handle a guild battle that has not been opened")
+	}
+	got, want := pipeline["寮突V2-识别是否没开寮突"], original["寮突-识别是否没开寮突"]
+	if got.Expected != want.Expected || !reflect.DeepEqual(got.ROI, want.ROI) || !reflect.DeepEqual(got.Next, want.Next) {
+		t.Fatalf("V2 unopened state = %+v, want original state %+v", got, want)
+	}
+}
+
+func TestGuildBarrierV2RetainsOriginalBattleStatesAndSoulSetup(t *testing.T) {
+	load := func(path string) map[string]any {
+		t.Helper()
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var nodes map[string]any
+		if err := json.Unmarshal(data, &nodes); err != nil {
+			t.Fatal(err)
+		}
+		return nodes
+	}
+	original := load(guildBarrierPipelinePath)
+	data, err := os.ReadFile(guildBarrierV2PipelinePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var normalized map[string]any
+	if err := json.Unmarshal([]byte(strings.ReplaceAll(string(data), "寮突V2", "寮突")), &normalized); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{
+		"寮突2", "寮突4", "寮突5", "寮突6", "寮突12", "寮突16_copy1", "寮突20", "寮突23", "寮突24", "寮突25",
+		"寮突-开始战斗", "寮突-开始装备御魂", "寮突-点击式神录", "寮突18", "寮突19", "寮突21", "寮突22",
+		"寮突-识别第一个目标是否已击破", "寮突-识别第二个目标是否已击破",
+		"寮突-识别第三个目标是否已击破", "寮突-识别第四个目标是否已击破",
+		"寮突-已攻破-关闭结界突破", "寮突-已攻破-恢复阴阳寮突破", "寮突-已攻破-切换阴阳寮", "寮突-已攻破-确认阴阳寮突破",
+	} {
+		if normalized[name] == nil || !reflect.DeepEqual(normalized[name], original[name]) {
+			t.Errorf("V2 %s differs from the original state or soul setup", name)
+		}
 	}
 }
 

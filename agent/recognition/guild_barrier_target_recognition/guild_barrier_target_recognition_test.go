@@ -138,7 +138,7 @@ func TestRecognizeCurrentTargetUsesMatchingRightLayout(t *testing.T) {
 		rightAttackButtonRecognitionNode: {Hit: true, Box: maa.Rect{900, 335, 180, 100}},
 	}
 
-	target, box, ok := recognizeCurrentTargetWith(func(node string) (*maa.RecognitionDetail, error) {
+	target, box, ok := recognizeCurrentTargetWith(func(node string, _ *maa.Rect) (*maa.RecognitionDetail, error) {
 		return details[node], nil
 	})
 	if !ok {
@@ -163,7 +163,7 @@ func TestRecognizeCurrentTargetRejectsCrossLayoutMatch(t *testing.T) {
 		rightAttackButtonRecognitionNode: {Hit: true},
 	}
 
-	if target, _, ok := recognizeCurrentTargetWith(func(node string) (*maa.RecognitionDetail, error) {
+	if target, _, ok := recognizeCurrentTargetWith(func(node string, _ *maa.Rect) (*maa.RecognitionDetail, error) {
 		return details[node], nil
 	}); ok {
 		t.Fatalf("cross-layout name and button must not match, got %q", target)
@@ -185,7 +185,7 @@ func TestRecognizeCurrentTargetSupportsCustomLayouts(t *testing.T) {
 	}
 
 	target, box, ok := recognizeCurrentTargetWith(
-		func(node string) (*maa.RecognitionDetail, error) {
+		func(node string, _ *maa.Rect) (*maa.RecognitionDetail, error) {
 			return details[node], nil
 		},
 		targetLayout{NameNode: nameNode, AttackNode: attackNode},
@@ -217,7 +217,7 @@ func TestRecognizeCurrentTargetMatchesSharedAttackByHorizontalBounds(t *testing.
 	}
 
 	target, box, ok := recognizeCurrentTargetWith(
-		func(node string) (*maa.RecognitionDetail, error) {
+		func(node string, _ *maa.Rect) (*maa.RecognitionDetail, error) {
 			return details[node], nil
 		},
 		targetLayout{NameNode: "左侧玩家", AttackNode: sharedAttackNode, AttackCenterXMax: &boundary},
@@ -228,6 +228,33 @@ func TestRecognizeCurrentTargetMatchesSharedAttackByHorizontalBounds(t *testing.
 	}
 	if box != (maa.Rect{900, 335, 180, 100}) {
 		t.Fatalf("bounded shared attack box = %v", box)
+	}
+}
+
+func TestMovingPopupSelectsHighestConfidenceNameWithoutChangingLegacy(t *testing.T) {
+	offset := maa.Rect{-125, -225, 260, 85}
+	for _, dynamic := range []bool{false, true} {
+		layout := targetLayout{NameNode: "name", AttackNode: "attack"}
+		want := "2"
+		if dynamic {
+			layout.NameROIOffset = &offset
+			want = "实际玩家"
+		}
+		got, _, hit := recognizeCurrentTargetWith(func(node string, roi *maa.Rect) (*maa.RecognitionDetail, error) {
+			if node == "attack" {
+				return &maa.RecognitionDetail{Hit: true, Box: maa.Rect{626, 495, 68, 40}}, nil
+			}
+			if dynamic && (roi == nil || *roi != (maa.Rect{501, 270, 260, 85})) {
+				t.Fatalf("dynamic name ROI = %v", roi)
+			}
+			if !dynamic && roi != nil {
+				t.Fatal("legacy lookup must not receive a dynamic ROI")
+			}
+			return &maa.RecognitionDetail{Hit: true, DetailJson: `{"best":{"text":"2"},"filtered":[{"text":"2","score":0.328},{"text":"实际玩家","score":0.998}]}`}, nil
+		}, layout)
+		if !hit || got != want {
+			t.Fatalf("dynamic=%v name=%q, hit=%v; want %q", dynamic, got, hit, want)
+		}
 	}
 }
 
@@ -329,6 +356,8 @@ func TestParseParamsAcceptsCustomLayoutsAndLogPrefix(t *testing.T) {
 	for _, invalid := range []map[string]any{
 		{"action": "reset", "log_prefix": ""},
 		{"action": "observe", "target_layouts": []any{}},
+		{"action": "reset", "target_layouts": []map[string]any{{"name_node": "name", "attack_node": "attack", "name_roi_offset": []int{0, -200, 0, 70}}}},
+		{"action": "reset", "target_layouts": []map[string]any{{"name_node": "name", "attack_node": "attack", "name_roi_offset": []int{0, -200, 200, -70}}}},
 		{
 			"action": "reset",
 			"target_layouts": []map[string]string{
